@@ -4,6 +4,7 @@ import Select from '../common/Select'
 import StatusPill from '../common/StatusPill'
 import TablePanel from '../common/TablePanel'
 import { apiRequest } from '../../utils/api'
+import useToast from '../common/useToast'
 
 const statusOptions = [
   { label: 'All', value: 'all' },
@@ -12,6 +13,7 @@ const statusOptions = [
 ]
 
 function ClassStudentsModal({ classItem, token, onClose }) {
+  const toast = useToast()
   const [rows, setRows] = useState([])
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 })
   const [page, setPage] = useState(1)
@@ -24,6 +26,7 @@ function ClassStudentsModal({ classItem, token, onClose }) {
   const loadStudents = useCallback(async () => {
     setIsLoading(true)
     setError('')
+    setRows([])
     const params = new URLSearchParams({ page: String(page) })
     if (filters.search) params.set('search', filters.search)
     if (filters.status !== 'all') params.set('status', filters.status)
@@ -34,10 +37,11 @@ function ClassStudentsModal({ classItem, token, onClose }) {
       setPagination(result.pagination)
     } catch (requestError) {
       setError(requestError.message)
+      toast.error(requestError.message)
     } finally {
       setIsLoading(false)
     }
-  }, [classItem.id, filters, page, token])
+  }, [classItem.id, filters, page, toast, token])
 
   useEffect(() => {
     const timer = window.setTimeout(() => loadStudents(), 0)
@@ -69,6 +73,8 @@ function ClassStudentsModal({ classItem, token, onClose }) {
         actionsLabel="Refresh"
         onFilterClick={loadStudents}
         pagination={{ ...pagination, onChange: setPage }}
+        isLoading={isLoading}
+        loadingLabel="Loading students"
       >
         <table className="data-table">
           <thead>
@@ -93,7 +99,6 @@ function ClassStudentsModal({ classItem, token, onClose }) {
           </tbody>
         </table>
         {!isLoading && rows.length === 0 ? <p className="empty-table-copy">No students match these filters.</p> : null}
-        {isLoading ? <p className="empty-table-copy">Loading students...</p> : null}
       </TablePanel>
     </Modal>
   )

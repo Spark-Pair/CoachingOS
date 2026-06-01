@@ -11,6 +11,7 @@ function FilterDrawer({
   children,
   applyLabel = 'Apply',
   resetLabel = 'Reset',
+  isLocked = false,
 }) {
   const drawerRef = useRef(null)
   const { shouldRender, isClosing } = useDisclosureTransition(isOpen, 220)
@@ -35,11 +36,18 @@ function FilterDrawer({
 
   return (
     <div className={`filter-drawer-layer${isClosing ? ' closing' : ''}`} role="presentation">
-      <button type="button" className="filter-drawer-backdrop" onClick={onClose} aria-label="Close filters" />
+      <button
+        type="button"
+        className="filter-drawer-backdrop"
+        onClick={() => {
+          if (!isLocked) onClose()
+        }}
+        aria-label="Close filters"
+      />
       <aside ref={drawerRef} className="filter-drawer" role="dialog" aria-modal="true" aria-labelledby="filter-drawer-title">
         <div className="filter-drawer-header">
           <h2 id="filter-drawer-title">{title}</h2>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close filters">
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close filters" disabled={isLocked}>
             <X size={18} />
           </button>
         </div>
@@ -49,11 +57,11 @@ function FilterDrawer({
         </div>
 
         <div className="filter-drawer-footer">
-          <button type="button" className="secondary-button drawer-action" onClick={onReset}>
+          <button type="button" className="secondary-button drawer-action" onClick={onReset} disabled={isLocked}>
             <RotateCcw size={16} />
             {resetLabel}
           </button>
-          <button type="button" className="primary-button drawer-action" onClick={onApply}>
+          <button type="button" className="primary-button drawer-action" onClick={onApply} disabled={isLocked}>
             {applyLabel}
           </button>
         </div>

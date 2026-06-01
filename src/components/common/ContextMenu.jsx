@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import useDisclosureTransition from '../../hooks/useDisclosureTransition'
 
-function ContextMenu({ isOpen, anchorRect, onClose, items = [] }) {
+function ContextMenu({ isOpen, anchorRect, onClose, items = [], isLocked = false }) {
   const { shouldRender, isClosing } = useDisclosureTransition(isOpen, 120)
 
   useEffect(() => {
@@ -23,7 +23,7 @@ function ContextMenu({ isOpen, anchorRect, onClose, items = [] }) {
     }
   }, [onClose, shouldRender])
 
-  if (!shouldRender || !anchorRect) {
+  if (isLocked || !shouldRender || !anchorRect) {
     return null
   }
 

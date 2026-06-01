@@ -11,6 +11,7 @@ import Select from '../components/common/Select'
 import StatusPill from '../components/common/StatusPill'
 import TablePanel from '../components/common/TablePanel'
 import { apiRequest } from '../utils/api'
+import useToast from '../components/common/useToast'
 
 const statusOptions = [
   { label: 'All', value: 'all' },
@@ -19,12 +20,12 @@ const statusOptions = [
 ]
 
 function ClassesPage({ auth }) {
+  const toast = useToast()
   const [classRows, setClassRows] = useState([])
   const [summary, setSummary] = useState({ total: 0, active: 0, inactive: 0, assignedStudents: 0 })
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 })
   const [page, setPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
-  const [pageError, setPageError] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isAddClassOpen, setIsAddClassOpen] = useState(false)
   const [editingClass, setEditingClass] = useState(null)
@@ -37,10 +38,11 @@ function ClassesPage({ auth }) {
   const [formError, setFormError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const isStatusTargetActive = statusTarget?.status === 'Active'
+  const isBusy = isLoading || isSaving
 
   const loadClasses = useCallback(async () => {
     setIsLoading(true)
-    setPageError('')
+    setClassRows([])
     const params = new URLSearchParams({ page: String(page) })
     if (filters.search) params.set('search', filters.search)
     if (filters.status !== 'all') params.set('status', filters.status)
@@ -55,11 +57,11 @@ function ClassesPage({ auth }) {
       setPagination(result.pagination)
       setSummary(result.summary)
     } catch (error) {
-      setPageError(error.message)
+      toast.error(error.message)
     } finally {
       setIsLoading(false)
     }
-  }, [auth.token, filters, page])
+  }, [auth.token, filters, page, toast])
 
   useEffect(() => {
     const timer = window.setTimeout(() => loadClasses(), 0)
@@ -75,11 +77,13 @@ function ClassesPage({ auth }) {
         token: auth.token,
         body: JSON.stringify(values),
       })
+      toast.success(classId ? 'Class updated.' : 'Class added.')
       setIsAddClassOpen(false)
       setEditingClass(null)
       await loadClasses()
     } catch (error) {
       setFormError(error.message)
+      toast.error(error.message)
     } finally {
       setIsSaving(false)
     }
@@ -88,18 +92,21 @@ function ClassesPage({ auth }) {
   async function changeStatus() {
     if (!statusTarget) return
 
-    setPageError('')
+    setIsSaving(true)
     try {
       await apiRequest(`/classes/${statusTarget.id}/status`, {
         method: 'PATCH',
         token: auth.token,
         body: JSON.stringify({ status: isStatusTargetActive ? 'Inactive' : 'Active' }),
       })
+      toast.success(isStatusTargetActive ? 'Class deactivated.' : 'Class activated.')
       setStatusTarget(null)
       await loadClasses()
     } catch (error) {
-      setPageError(error.message)
+      toast.error(error.message)
       setStatusTarget(null)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -109,7 +116,7 @@ function ClassesPage({ auth }) {
         title="Classes"
         subtitle="Register classes, manage availability, and inspect assigned students."
         action={(
-          <button type="button" className="primary-button" onClick={() => {
+          <button type="button" className="primary-button" disabled={isBusy} onClick={() => {
             setFormError('')
             setIsAddClassOpen(true)
           }}>
@@ -126,12 +133,15 @@ function ClassesPage({ auth }) {
         <MetricCard icon={UsersRound} label="Inactive classes" value={summary.inactive} tone="danger" />
       </section>
 
-      {pageError ? <div className="inline-alert danger">{pageError}</div> : null}
       <TablePanel
         className="students-directory classes-directory"
-        panelContentHeight="64.5vh"
-        onFilterClick={() => setIsFilterOpen(true)}
+        onFilterClick={() => {
+          if (!isBusy) setIsFilterOpen(true)
+        }}
         pagination={{ ...pagination, onChange: setPage }}
+        isLoading={isLoading}
+        loadingLabel="Loading classes"
+        isLocked={isSaving}
       >
         <table className="data-table">
           <thead>
@@ -139,7 +149,6 @@ function ClassesPage({ auth }) {
               <th>S.No</th>
               <th>Class</th>
               <th>Students</th>
-              <th>Sort Order</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -161,13 +170,13 @@ function ClassesPage({ auth }) {
                     {classItem.studentCount} student{classItem.studentCount === 1 ? '' : 's'}
                   </button>
                 </td>
-                <td>{classItem.sortOrder}</td>
                 <td><StatusPill value={classItem.status} /></td>
                 <td>
                   <button
                     type="button"
                     className="icon-button"
                     aria-label={`More actions for ${classItem.name}`}
+                    disabled={isBusy}
                     onClick={(event) => setMenuState({
                       classItem,
                       anchorRect: event.currentTarget.getBoundingClientRect(),
@@ -181,12 +190,13 @@ function ClassesPage({ auth }) {
           </tbody>
         </table>
         {!isLoading && classRows.length === 0 ? <p className="empty-table-copy">No classes match these filters.</p> : null}
-        {isLoading ? <p className="empty-table-copy">Loading classes...</p> : null}
       </TablePanel>
 
       <FilterDrawer
         isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
+        onClose={() => {
+          if (!isBusy) setIsFilterOpen(false)
+        }}
         onReset={() => {
           setSearchDraft('')
           setStatusDraft('all')
@@ -199,6 +209,7 @@ function ClassesPage({ auth }) {
           setPage(1)
           setIsFilterOpen(false)
         }}
+        isLocked={isBusy}
       >
         <label className="drawer-field">
           <span>Class Name</span>
@@ -209,7 +220,9 @@ function ClassesPage({ auth }) {
 
       <ClassFormModal
         isOpen={isAddClassOpen}
-        onClose={() => setIsAddClassOpen(false)}
+        onClose={() => {
+          if (!isSaving) setIsAddClassOpen(false)
+        }}
         onSubmit={(values) => saveClass(values)}
         isSaving={isSaving}
         error={formError}
@@ -217,7 +230,9 @@ function ClassesPage({ auth }) {
       <ClassFormModal
         mode="edit"
         isOpen={Boolean(editingClass)}
-        onClose={() => setEditingClass(null)}
+        onClose={() => {
+          if (!isSaving) setEditingClass(null)
+        }}
         classItem={editingClass}
         onSubmit={(values) => saveClass(values, editingClass.id)}
         isSaving={isSaving}
@@ -230,6 +245,7 @@ function ClassesPage({ auth }) {
         isOpen={Boolean(menuState.classItem)}
         anchorRect={menuState.anchorRect}
         onClose={() => setMenuState({ classItem: null, anchorRect: null })}
+        isLocked={isBusy}
         items={menuState.classItem ? [
           {
             label: 'View students',
@@ -260,7 +276,9 @@ function ClassesPage({ auth }) {
           : ''}
         confirmLabel={isStatusTargetActive ? 'Deactivate' : 'Activate'}
         tone={isStatusTargetActive ? 'danger' : 'default'}
-        onCancel={() => setStatusTarget(null)}
+        onCancel={() => {
+          if (!isSaving) setStatusTarget(null)
+        }}
         onConfirm={changeStatus}
       />
     </div>

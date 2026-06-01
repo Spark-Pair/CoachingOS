@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig, MoreHorizontal, Pencil, Plus, Power, PowerOff, Users, UsersRound } from 'lucide-react'
 import ConfirmModal from '../components/common/ConfirmModal'
 import ContextMenu from '../components/common/ContextMenu'
@@ -9,7 +9,8 @@ import Select from '../components/common/Select'
 import StatusPill from '../components/common/StatusPill'
 import TablePanel from '../components/common/TablePanel'
 import StudentFormModal from '../components/students/StudentFormModal'
-import { classes, students } from '../data/mockData'
+import { apiRequest, resolveUploadUrl } from '../utils/api'
+import useToast from '../components/common/useToast'
 
 function formatTableDate(date) {
   return new Intl.DateTimeFormat('en-US', {
@@ -19,32 +20,143 @@ function formatTableDate(date) {
   }).format(new Date(date))
 }
 
-const studentClassOptions = classes.map((classItem) => ({ label: classItem.name, value: classItem.name }))
-
-const filterClassOptions = [
-  { label: 'All', value: 'all' },
-  ...studentClassOptions,
-]
-
 const statusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'Active' },
   { label: 'Inactive', value: 'Inactive' },
 ]
 
-function StudentsPage() {
-  const [studentRows, setStudentRows] = useState(students)
+function StudentsPage({ auth }) {
+  const toast = useToast()
+  const [studentRows, setStudentRows] = useState([])
+  const [summary, setSummary] = useState({ total: 0, active: 0, inactive: 0 })
+  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 })
+  const [page, setPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [classOptions, setClassOptions] = useState([])
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
   const [statusTarget, setStatusTarget] = useState(null)
   const [menuState, setMenuState] = useState({ student: null, anchorRect: null })
-  const [classFilter, setClassFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const activeStudents = studentRows.filter((student) => student.status === 'Active').length
-  const inactiveStudents = studentRows.length - activeStudents
+  const [searchDraft, setSearchDraft] = useState('')
+  const [classDraft, setClassDraft] = useState('all')
+  const [statusDraft, setStatusDraft] = useState('all')
+  const [dateFromDraft, setDateFromDraft] = useState('')
+  const [dateToDraft, setDateToDraft] = useState('')
+  const [filters, setFilters] = useState({ search: '', classId: 'all', status: 'all', dateFrom: '', dateTo: '' })
+  const [formError, setFormError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const isMenuOpen = Boolean(menuState.student)
   const isStatusTargetActive = statusTarget?.status === 'Active'
+  const isBusy = isLoading || isSaving
+
+  const filterClassOptions = useMemo(() => [
+    { label: 'All', value: 'all' },
+    ...classOptions.map((classItem) => ({ label: classItem.name, value: classItem.id })),
+  ], [classOptions])
+
+  const studentClassOptions = useMemo(() => classOptions
+    .filter((classItem) => classItem.status === 'Active')
+    .map((classItem) => ({ label: classItem.name, value: classItem.id })), [classOptions])
+
+  const loadClassOptions = useCallback(async () => {
+    const result = await apiRequest('/classes/options', { token: auth.token })
+    setClassOptions(result.data || [])
+  }, [auth.token])
+
+  const loadStudents = useCallback(async () => {
+    setIsLoading(true)
+    setStudentRows([])
+
+    const params = new URLSearchParams({ page: String(page) })
+    if (filters.search) params.set('search', filters.search)
+    if (filters.status !== 'all') params.set('status', filters.status)
+    if (filters.classId !== 'all') params.set('classId', filters.classId)
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
+    if (filters.dateTo) params.set('dateTo', filters.dateTo)
+
+    try {
+      const result = await apiRequest(`/students?${params}`, { token: auth.token })
+      if (page > result.pagination.pages) {
+        setPage(result.pagination.pages)
+        return
+      }
+      setStudentRows(result.data)
+      setPagination(result.pagination)
+      setSummary(result.summary)
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [auth.token, filters, page, toast])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadClassOptions().catch(() => {})
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [loadClassOptions])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => loadStudents(), 0)
+    return () => window.clearTimeout(timer)
+  }, [loadStudents])
+
+  async function saveStudent(values, studentId) {
+    setIsSaving(true)
+    setFormError('')
+    try {
+      const formData = new FormData()
+      formData.set('name', values.name)
+      formData.set('parentName', values.parentName)
+      formData.set('rollNo', values.rollNo)
+      formData.set('monthlyFee', String(values.monthlyFee))
+      formData.set('joiningDate', values.joiningDate)
+      formData.set('classId', values.classId)
+      if (values.photo) {
+        formData.set('photo', values.photo)
+      }
+
+      await apiRequest(studentId ? `/students/${studentId}` : '/students', {
+        method: studentId ? 'PUT' : 'POST',
+        token: auth.token,
+        body: formData,
+      })
+
+      toast.success(studentId ? 'Student updated.' : 'Student added.')
+      setIsAddStudentOpen(false)
+      setEditingStudent(null)
+      await loadStudents()
+    } catch (error) {
+      setFormError(error.message)
+      toast.error(error.message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function changeStatus() {
+    if (!statusTarget) return
+
+    setIsSaving(true)
+    try {
+      await apiRequest(`/students/${statusTarget.id}/status`, {
+        method: 'PATCH',
+        token: auth.token,
+        body: JSON.stringify({ status: isStatusTargetActive ? 'Inactive' : 'Active' }),
+      })
+      toast.success(isStatusTargetActive ? 'Student deactivated.' : 'Student activated.')
+      setStatusTarget(null)
+      await loadStudents()
+    } catch (error) {
+      toast.error(error.message)
+      setStatusTarget(null)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="page-layout">
@@ -52,7 +164,15 @@ function StudentsPage() {
         title="Students"
         subtitle="Manage student profiles, class assignments, and QR-ready identities."
         action={(
-          <button type="button" className="primary-button" onClick={() => setIsAddStudentOpen(true)}>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={isBusy}
+            onClick={() => {
+              setFormError('')
+              setIsAddStudentOpen(true)
+            }}
+          >
             <Plus size={16} />
             Add Student
           </button>
@@ -60,15 +180,20 @@ function StudentsPage() {
       />
 
       <section className="metric-grid students-metrics">
-        <MetricCard icon={Users} label="Total students" value={studentRows.length} tone="brand" />
-        <MetricCard icon={CircleCheckBig} label="Active students" value={activeStudents} tone="success" />
-        <MetricCard icon={UsersRound} label="Inactive students" value={inactiveStudents} tone="danger" />
+        <MetricCard icon={Users} label="Total students" value={summary.total} tone="brand" />
+        <MetricCard icon={CircleCheckBig} label="Active students" value={summary.active} tone="success" />
+        <MetricCard icon={UsersRound} label="Inactive students" value={summary.inactive} tone="danger" />
       </section>
 
       <TablePanel
         className="students-directory"
-        panelContentHeight = "64.5vh"
-        onFilterClick={() => setIsFilterOpen(true)}
+        onFilterClick={() => {
+          if (!isBusy) setIsFilterOpen(true)
+        }}
+        pagination={{ ...pagination, onChange: setPage }}
+        isLoading={isLoading}
+        loadingLabel="Loading students"
+        isLocked={isSaving}
       >
         <table className="data-table">
           <thead>
@@ -84,13 +209,18 @@ function StudentsPage() {
             </tr>
           </thead>
           <tbody>
-            {studentRows.map((student, index) => (
+            {!isLoading && studentRows.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="empty-table-copy">No students match these filters.</td>
+              </tr>
+            ) : null}
+            {!isLoading && studentRows.map((student, index) => (
               <tr key={student.id}>
-                <td className="student-index">{String(index + 1).padStart(2, '0')}</td>
+                <td className="student-index">{String((pagination.page - 1) * 30 + index + 1).padStart(2, '0')}</td>
                 <td>
                   <div className="student-cell">
                     <div className="student-avatar" aria-hidden="true">
-                      {student.name.split(' ').map((part) => part[0]).join('')}
+                      {student.photoPath ? <img src={resolveUploadUrl(student.photoPath)} alt="" /> : student.name.split(' ').map((part) => part[0]).join('')}
                     </div>
                     <div>
                       <span className="student-name">{student.name}</span>
@@ -108,7 +238,9 @@ function StudentsPage() {
                     type="button"
                     className="icon-button"
                     aria-label={`More actions for ${student.name}`}
+                    disabled={isBusy}
                     onClick={(event) => {
+                      if (isBusy) return
                       setMenuState({
                         student,
                         anchorRect: event.currentTarget.getBoundingClientRect(),
@@ -126,42 +258,75 @@ function StudentsPage() {
 
       <FilterDrawer
         isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        onReset={() => setIsFilterOpen(false)}
-        onApply={() => setIsFilterOpen(false)}
+        onClose={() => {
+          if (!isBusy) setIsFilterOpen(false)
+        }}
+        onReset={() => {
+          setSearchDraft('')
+          setClassDraft('all')
+          setStatusDraft('all')
+          setDateFromDraft('')
+          setDateToDraft('')
+          setFilters({ search: '', classId: 'all', status: 'all', dateFrom: '', dateTo: '' })
+          setPage(1)
+          setIsFilterOpen(false)
+        }}
+        onApply={() => {
+          setFilters({
+            search: searchDraft.trim(),
+            classId: classDraft,
+            status: statusDraft,
+            dateFrom: dateFromDraft,
+            dateTo: dateToDraft,
+          })
+          setPage(1)
+          setIsFilterOpen(false)
+        }}
+        isLocked={isBusy}
       >
         <label className="drawer-field">
           <span>Student Name</span>
-          <input type="search" placeholder="Search by name" />
+          <input type="search" value={searchDraft} placeholder="Search by name" onChange={(event) => setSearchDraft(event.target.value)} />
         </label>
-        <Select label="Class" options={filterClassOptions} value={classFilter} onChange={setClassFilter} />
-        <Select label="Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
+        <Select label="Class" options={filterClassOptions} value={classDraft} onChange={setClassDraft} />
+        <Select label="Status" options={statusOptions} value={statusDraft} onChange={setStatusDraft} />
         <label className="drawer-field">
           <span>Date From</span>
-          <input type="date" />
+          <input type="date" value={dateFromDraft} onChange={(event) => setDateFromDraft(event.target.value)} />
         </label>
         <label className="drawer-field">
           <span>Date To</span>
-          <input type="date" />
+          <input type="date" value={dateToDraft} onChange={(event) => setDateToDraft(event.target.value)} />
         </label>
       </FilterDrawer>
 
       <StudentFormModal
         isOpen={isAddStudentOpen}
-        onClose={() => setIsAddStudentOpen(false)}
+        onClose={() => {
+          if (!isSaving) setIsAddStudentOpen(false)
+        }}
         classOptions={studentClassOptions}
+        onSubmit={(values) => saveStudent(values)}
+        isSaving={isSaving}
+        error={formError}
       />
       <StudentFormModal
         mode="edit"
         isOpen={Boolean(editingStudent)}
-        onClose={() => setEditingStudent(null)}
+        onClose={() => {
+          if (!isSaving) setEditingStudent(null)
+        }}
         classOptions={studentClassOptions}
         student={editingStudent}
+        onSubmit={(values) => saveStudent(values, editingStudent.id)}
+        isSaving={isSaving}
+        error={formError}
       />
       <ContextMenu
         isOpen={isMenuOpen}
         anchorRect={menuState.anchorRect}
         onClose={() => setMenuState({ student: null, anchorRect: null })}
+        isLocked={isBusy}
         items={menuState.student ? [
           {
             label: 'Edit',
@@ -186,15 +351,10 @@ function StudentsPage() {
         }
         confirmLabel={isStatusTargetActive ? 'Deactivate' : 'Activate'}
         tone={isStatusTargetActive ? 'danger' : 'default'}
-        onCancel={() => setStatusTarget(null)}
-        onConfirm={() => {
-          setStudentRows((currentRows) => currentRows.map((student) => (
-            student.id === statusTarget.id
-              ? { ...student, status: isStatusTargetActive ? 'Inactive' : 'Active' }
-              : student
-          )))
-          setStatusTarget(null)
+        onCancel={() => {
+          if (!isSaving) setStatusTarget(null)
         }}
+        onConfirm={changeStatus}
       />
     </div>
   )

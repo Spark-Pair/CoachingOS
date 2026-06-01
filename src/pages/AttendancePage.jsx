@@ -80,7 +80,6 @@ function AttendancePage() {
 
       <TablePanel
         className="students-directory attendance-directory"
-        panelContentHeight = "64.5vh"
         actionsLabel="Mark day off"
         actionIcon={CalendarDays}
         onFilterClick={markDayOff}

@@ -1,17 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from '../common/Modal'
-import Select from '../common/Select'
-
-const statusOptions = [
-  { label: 'Active', value: 'Active' },
-  { label: 'Inactive', value: 'Inactive' },
-]
 
 function ClassFormModal({ mode = 'add', isOpen, onClose, classItem, onSubmit, isSaving = false, error = '' }) {
   const nameInputRef = useRef(null)
   const [name, setName] = useState(classItem?.name ?? '')
-  const [sortOrder, setSortOrder] = useState(classItem?.sortOrder ?? '')
-  const [status, setStatus] = useState(classItem?.status ?? 'Active')
 
   useEffect(() => {
     if (!isOpen) {
@@ -29,8 +21,6 @@ function ClassFormModal({ mode = 'add', isOpen, onClose, classItem, onSubmit, is
 
     const timer = window.setTimeout(() => {
       setName(classItem?.name ?? '')
-      setSortOrder(classItem?.sortOrder ?? '')
-      setStatus(classItem?.status ?? 'Active')
     }, 0)
     return () => window.clearTimeout(timer)
   }, [classItem, isOpen])
@@ -45,6 +35,7 @@ function ClassFormModal({ mode = 'add', isOpen, onClose, classItem, onSubmit, is
       isOpen={isOpen}
       onClose={onClose}
       className="class-modal"
+      disableClose={isSaving}
       footer={(
         <>
           <button type="button" className="secondary-button modal-action" onClick={onClose} disabled={isSaving}>
@@ -61,20 +52,15 @@ function ClassFormModal({ mode = 'add', isOpen, onClose, classItem, onSubmit, is
         className="student-form"
         onSubmit={(event) => {
           event.preventDefault()
-          onSubmit({ name: name.trim(), sortOrder: Number(sortOrder), status })
+          onSubmit({ name: name.trim() })
         }}
       >
         {error ? <div className="inline-alert danger">{error}</div> : null}
-        <div className="form-grid two-columns">
+        <div className="form-grid">
           <label className="drawer-field">
             <span>Class Name</span>
             <input ref={nameInputRef} type="text" required placeholder="Class name" value={name} onChange={(event) => setName(event.target.value)} />
           </label>
-          <label className="drawer-field">
-            <span>Sort Order</span>
-            <input type="number" min="1" required placeholder="Sort order" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
-          </label>
-          <Select label="Status" options={statusOptions} value={status} onChange={setStatus} />
         </div>
       </form>
     </Modal>

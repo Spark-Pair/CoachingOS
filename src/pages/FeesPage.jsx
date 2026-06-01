@@ -87,7 +87,6 @@ function FeesPage() {
       </section>
       <TablePanel
         className="students-directory fees-directory"
-        panelContentHeight="64.5vh"
         onFilterClick={() => setIsFilterOpen(true)}
       >
         <table className="data-table">

@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Download, SlidersHorizontal } from 'lucide-react'
+import PanelLoader from './PanelLoader'
 
 function TablePanel({
   title,
@@ -6,14 +7,18 @@ function TablePanel({
   children,
   actionsLabel = 'Filters',
   className = '',
-  panelContentHeight = '',
   toolbarContent,
   onFilterClick,
   actionIcon: ActionIcon = SlidersHorizontal,
   pagination,
+  isLoading = false,
+  loadingLabel,
+  isLocked = false,
 }) {
   const currentPage = pagination?.page ?? 1
   const pageCount = pagination?.pages ?? 1
+  const isToolbarDisabled = isLocked || isLoading
+  const isPagerDisabled = isLocked || isLoading
 
   return (
     <section className={`panel-shell${className ? ` ${className}` : ''}`}>
@@ -23,8 +28,11 @@ function TablePanel({
             type="button"
             className="pager-button"
             aria-label="Previous page"
-            disabled={!pagination || currentPage <= 1}
-            onClick={() => pagination?.onChange(currentPage - 1)}
+            disabled={!pagination || isPagerDisabled || currentPage <= 1}
+            onClick={() => {
+              if (isPagerDisabled) return
+              pagination?.onChange(currentPage - 1)
+            }}
           >
             <ChevronLeft size={14} />
           </button>
@@ -35,19 +43,22 @@ function TablePanel({
             type="button"
             className="pager-button"
             aria-label="Next page"
-            disabled={!pagination || currentPage >= pageCount}
-            onClick={() => pagination?.onChange(currentPage + 1)}
+            disabled={!pagination || isPagerDisabled || currentPage >= pageCount}
+            onClick={() => {
+              if (isPagerDisabled) return
+              pagination?.onChange(currentPage + 1)
+            }}
           >
             <ChevronRight size={14} />
           </button>
         </div>
         <div className="panel-toolbar-actions">
           {toolbarContent}
-          <button type="button" className="toolbar-button" onClick={onFilterClick}>
+          <button type="button" className="toolbar-button" onClick={onFilterClick} disabled={isToolbarDisabled}>
             <ActionIcon size={14} />
             {actionsLabel}
           </button>
-          <button type="button" className="toolbar-button">
+          <button type="button" className="toolbar-button" disabled={isToolbarDisabled}>
             <Download size={14} />
             Export
           </button>
@@ -60,11 +71,8 @@ function TablePanel({
         </div>
       ) : null}
       
-      <div
-        className="panel-content"
-        style={panelContentHeight ? { height: panelContentHeight } : undefined}
-      >
-        {children}
+      <div className="panel-content">
+        {isLoading ? <PanelLoader label={loadingLabel || 'Loading...'} /> : children}
       </div>
     </section>
   )
