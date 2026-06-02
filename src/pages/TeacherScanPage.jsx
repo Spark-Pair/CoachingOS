@@ -229,16 +229,6 @@ function TeacherScanPage({ auth, mode = 'teacher' }) {
               <span className="pin-brand-title">IQBAL COACHING</span>
               <span className="pin-brand-subtitle">{isAdmin ? 'Administrator attendance scan' : 'Teacher attendance scan'}</span>
             </div>
-            {isAdmin ? (
-              <Link to="/attendance" className="scan-link light">
-                Attendance
-              </Link>
-            ) : (
-              <NavLink to="/pin" className="scan-link light">
-                <ShieldCheck size={15} />
-                Admin PIN
-              </NavLink>
-            )}
           </div>
 
           <div className="scan-camera-card">
