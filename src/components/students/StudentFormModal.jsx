@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { ImagePlus } from 'lucide-react'
 import Modal from '../common/Modal'
 import Select from '../common/Select'
 
@@ -18,8 +17,6 @@ function StudentFormModal({
   error = '',
 }) {
   const nameInputRef = useRef(null)
-  const [picturePreview, setPicturePreview] = useState('')
-  const [photoFile, setPhotoFile] = useState(null)
   const [name, setName] = useState(student?.name ?? '')
   const [parentName, setParentName] = useState(student?.parentName ?? '')
   const [rollNo, setRollNo] = useState(student?.rollNo ?? '')
@@ -48,24 +45,9 @@ function StudentFormModal({
       setMonthlyFee(student?.monthlyFee ?? '')
       setClassId(student?.classId ?? classOptions[0]?.value ?? '')
       setJoiningDate(student?.joiningDate ? String(student.joiningDate).slice(0, 10) : getTodayInputValue())
-      if (!student) {
-        setPhotoFile(null)
-        setPicturePreview((currentPreview) => {
-          if (currentPreview) {
-            URL.revokeObjectURL(currentPreview)
-          }
-          return ''
-        })
-      }
     }, 0)
     return () => window.clearTimeout(timer)
   }, [classOptions, isOpen, student])
-
-  useEffect(() => () => {
-    if (picturePreview) {
-      URL.revokeObjectURL(picturePreview)
-    }
-  }, [picturePreview])
 
   const title = mode === 'edit' ? 'Edit Student' : 'Add Student'
   const saveLabel = mode === 'edit' ? 'Save Changes' : 'Save Student'
@@ -102,41 +84,12 @@ function StudentFormModal({
             monthlyFee: Number(monthlyFee),
             joiningDate,
             classId,
-            photo: photoFile,
           }
 
           onSubmit(payload)
         }}
       >
         {error ? <div className="inline-alert danger">{error}</div> : null}
-        <label className="picture-upload">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (!file) {
-                return
-              }
-
-              setPhotoFile(file)
-              setPicturePreview((currentPreview) => {
-                if (currentPreview) {
-                  URL.revokeObjectURL(currentPreview)
-                }
-                return URL.createObjectURL(file)
-              })
-            }}
-          />
-          <span className="picture-upload-icon">
-            {picturePreview ? <img src={picturePreview} alt="" /> : <ImagePlus size={22} />}
-          </span>
-          <span>
-            <span className="picture-upload-title">Picture</span>
-            <small>{picturePreview ? 'Change student photo' : 'Upload student photo'}</small>
-          </span>
-        </label>
-
         <div className="form-grid two-columns">
           <label className="drawer-field">
             <span>Name</span>

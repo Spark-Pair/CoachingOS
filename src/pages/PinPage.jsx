@@ -1,6 +1,6 @@
 import { BookOpenCheck, CheckCircle2, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 function PinPage({ auth }) {
   const navigate = useNavigate()
@@ -132,6 +132,9 @@ function PinPage({ auth }) {
             <button type="submit" className="primary-button pin-submit" disabled={isSubmitting}>
               {isSubmitting ? 'Please wait...' : isRegistration ? 'Save PIN and continue' : 'Unlock workspace'}
             </button>
+            <Link to="/scan" className="secondary-button pin-submit teacher-scan-link">
+              Teacher Scan
+            </Link>
           </form>
         </div>
       </section>

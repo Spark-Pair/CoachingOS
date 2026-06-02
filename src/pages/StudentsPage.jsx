@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CircleCheckBig, MoreHorizontal, Pencil, Plus, Power, PowerOff, Users, UsersRound } from 'lucide-react'
+import { CircleCheckBig, MoreHorizontal, Pencil, Plus, Power, PowerOff, QrCode, Users, UsersRound } from 'lucide-react'
 import ConfirmModal from '../components/common/ConfirmModal'
 import ContextMenu from '../components/common/ContextMenu'
 import FilterDrawer from '../components/common/FilterDrawer'
@@ -9,7 +9,8 @@ import Select from '../components/common/Select'
 import StatusPill from '../components/common/StatusPill'
 import TablePanel from '../components/common/TablePanel'
 import StudentFormModal from '../components/students/StudentFormModal'
-import { apiRequest, resolveUploadUrl } from '../utils/api'
+import StudentQrModal from '../components/students/StudentQrModal'
+import { apiRequest } from '../utils/api'
 import useToast from '../components/common/useToast'
 
 function formatTableDate(date) {
@@ -37,6 +38,7 @@ function StudentsPage({ auth }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
+  const [qrStudent, setQrStudent] = useState(null)
   const [statusTarget, setStatusTarget] = useState(null)
   const [menuState, setMenuState] = useState({ student: null, anchorRect: null })
   const [searchDraft, setSearchDraft] = useState('')
@@ -108,21 +110,10 @@ function StudentsPage({ auth }) {
     setIsSaving(true)
     setFormError('')
     try {
-      const formData = new FormData()
-      formData.set('name', values.name)
-      formData.set('parentName', values.parentName)
-      formData.set('rollNo', values.rollNo)
-      formData.set('monthlyFee', String(values.monthlyFee))
-      formData.set('joiningDate', values.joiningDate)
-      formData.set('classId', values.classId)
-      if (values.photo) {
-        formData.set('photo', values.photo)
-      }
-
       await apiRequest(studentId ? `/students/${studentId}` : '/students', {
         method: studentId ? 'PUT' : 'POST',
         token: auth.token,
-        body: formData,
+        body: JSON.stringify(values),
       })
 
       toast.success(studentId ? 'Student updated.' : 'Student added.')
@@ -220,7 +211,7 @@ function StudentsPage({ auth }) {
                 <td>
                   <div className="student-cell">
                     <div className="student-avatar" aria-hidden="true">
-                      {student.photoPath ? <img src={resolveUploadUrl(student.photoPath)} alt="" /> : student.name.split(' ').map((part) => part[0]).join('')}
+                      {student.name.split(' ').map((part) => part[0]).join('')}
                     </div>
                     <div>
                       <span className="student-name">{student.name}</span>
@@ -329,6 +320,11 @@ function StudentsPage({ auth }) {
         isLocked={isBusy}
         items={menuState.student ? [
           {
+            label: 'View QR',
+            icon: QrCode,
+            onClick: () => setQrStudent(menuState.student),
+          },
+          {
             label: 'Edit',
             icon: Pencil,
             onClick: () => setEditingStudent(menuState.student),
@@ -356,6 +352,7 @@ function StudentsPage({ auth }) {
         }}
         onConfirm={changeStatus}
       />
+      <StudentQrModal student={qrStudent} onClose={() => setQrStudent(null)} />
     </div>
   )
 }

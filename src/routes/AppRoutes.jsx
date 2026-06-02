@@ -43,11 +43,19 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/attendance/scan"
+        element={
+          <ProtectedRoute auth={auth}>
+            <TeacherScanPage auth={auth} mode="admin" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/attendance"
         element={
           <ProtectedRoute auth={auth}>
             <AdminLayout auth={auth}>
-              <AttendancePage />
+              <AttendancePage auth={auth} />
             </AdminLayout>
           </ProtectedRoute>
         }

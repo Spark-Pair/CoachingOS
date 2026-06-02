@@ -7,14 +7,13 @@ import {
   LayoutDashboard,
   LogOut,
   QrCode,
-  ScanLine,
   Settings,
   Users,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { apiRequest } from '../../utils/api'
 import ToastProvider from '../common/ToastProvider'
+
+const COACHING_NAME = 'IQBAL COACHING'
 
 const navigation = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,26 +27,6 @@ const navigation = [
 ]
 
 function AdminLayout({ auth, children }) {
-  const [coachingName, setCoachingName] = useState('CoachingOS')
-
-  useEffect(() => {
-    let isMounted = true
-
-    apiRequest('/settings', { token: auth.token })
-      .then((result) => {
-        if (isMounted) setCoachingName(result.coachingName)
-      })
-      .catch(() => {})
-
-    const handleNameUpdate = (event) => setCoachingName(event.detail)
-    window.addEventListener('coaching-name-updated', handleNameUpdate)
-
-    return () => {
-      isMounted = false
-      window.removeEventListener('coaching-name-updated', handleNameUpdate)
-    }
-  }, [auth.token])
-
   return (
     <ToastProvider>
       <div className="app-shell">
@@ -57,7 +36,7 @@ function AdminLayout({ auth, children }) {
               <BookOpenCheck size={20} strokeWidth={2.2} />
             </div>
             <div>
-              <span className="sidebar-brand-title">{coachingName}</span>
+              <span className="sidebar-brand-title">{COACHING_NAME}</span>
               <span>Management</span>
             </div>
           </div>
@@ -82,21 +61,10 @@ function AdminLayout({ auth, children }) {
           </nav>
 
           <div className="sidebar-footer">
-            <NavLink to="/scan" className="scan-shortcut">
-              <ScanLine size={16} strokeWidth={2} />
-              <span>Teacher scan</span>
-            </NavLink>
-            <div className="sidebar-divider" />
-            <div className="profile-block">
-              <div className="profile-avatar">RA</div>
-              <div className="profile-copy">
-                <span className="profile-name">Raza Admin</span>
-                <span>Administrator</span>
-              </div>
-              <button type="button" className="logout-button" onClick={auth.logout} aria-label="Logout">
-                <LogOut size={16} strokeWidth={2} />
-              </button>
-            </div>
+            <button type="button" className="logout-button danger" onClick={auth.logout}>
+              <LogOut size={16} strokeWidth={2} />
+              <span>Logout</span>
+            </button>
           </div>
         </aside>
 
