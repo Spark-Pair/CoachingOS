@@ -1,9 +1,11 @@
 import { BrowserMultiFormatReader } from '@zxing/browser'
 import { Camera, CheckCircle2, QrCode, ShieldCheck } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, NavLink, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { apiRequest } from '../utils/api'
 import { formatDate } from '../utils/date'
+
+const scanFeedbackCooldownMs = 1000
 
 function getTodayInputValue() {
   return new Date().toISOString().slice(0, 10)
@@ -24,6 +26,7 @@ function TeacherScanPage({ auth, mode = 'teacher' }) {
   const [cameraError, setCameraError] = useState('')
   const [dayOffBlocked, setDayOffBlocked] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [scanFeedback, setScanFeedback] = useState(null)
   const [message, setMessage] = useState({
     tone: 'info',
     text: 'Point camera at student QR code to mark attendance.',
@@ -35,14 +38,42 @@ function TeacherScanPage({ auth, mode = 'teacher' }) {
   const zxingControlsRef = useRef(null)
   const lastScanRef = useRef('')
   const submittingRef = useRef(false)
+  const scanCooldownRef = useRef(false)
+  const scanCooldownTimerRef = useRef(null)
+  const scanFeedbackTimerRef = useRef(null)
 
   useEffect(() => {
     submittingRef.current = isSubmitting
   }, [isSubmitting])
 
+  useEffect(() => () => {
+    window.clearTimeout(scanCooldownTimerRef.current)
+    window.clearTimeout(scanFeedbackTimerRef.current)
+  }, [])
+
+  const showScanFeedback = useCallback((scanCode, feedback) => {
+    window.clearTimeout(scanCooldownTimerRef.current)
+    window.clearTimeout(scanFeedbackTimerRef.current)
+
+    scanCooldownRef.current = true
+    setScanFeedback(feedback)
+
+    scanFeedbackTimerRef.current = window.setTimeout(() => {
+      setScanFeedback(null)
+    }, scanFeedbackCooldownMs)
+
+    scanCooldownTimerRef.current = window.setTimeout(() => {
+      scanCooldownRef.current = false
+      if (lastScanRef.current === scanCode) {
+        lastScanRef.current = ''
+      }
+    }, scanFeedbackCooldownMs)
+  }, [])
+
   const markAttendance = useCallback(async (scanCodeRaw) => {
     const scanCode = String(scanCodeRaw || '').trim()
     if (!scanCode) return
+    if (scanCooldownRef.current) return
     if (submittingRef.current) return
     if (lastScanRef.current === scanCode) return
     if (isAdmin && !adminToken) {
@@ -62,22 +93,33 @@ function TeacherScanPage({ auth, mode = 'teacher' }) {
         }),
       })
 
-      setCount((value) => value + 1)
+      if (!result.alreadyMarked) {
+        setCount((value) => value + 1)
+      }
+
+      const statusText = result.alreadyMarked ? 'Already marked' : 'Marked successfully'
+      const statusTone = result.alreadyMarked ? 'info' : 'success'
       setMessage({
-        tone: 'success',
-        text: `${result.student.name} marked present in ${result.student.className}.`,
+        tone: statusTone,
+        text: `${statusText}: ${result.student.name} in ${result.student.className}.`,
+      })
+      showScanFeedback(scanCode, {
+        tone: statusTone,
+        title: 'Successfully scanned',
+        text: statusText,
+        detail: `${result.student.name} - ${result.student.className}`,
       })
     } catch (error) {
       setMessage({ tone: 'warning', text: error.message })
+      showScanFeedback(scanCode, {
+        tone: 'warning',
+        title: 'Scan failed',
+        text: error.message,
+      })
     } finally {
       setIsSubmitting(false)
-      window.setTimeout(() => {
-        if (lastScanRef.current === scanCode) {
-          lastScanRef.current = ''
-        }
-      }, 1200)
     }
-  }, [adminToken, isAdmin, selectedDate])
+  }, [adminToken, isAdmin, selectedDate, showScanFeedback])
 
   useEffect(() => {
     let isMounted = true
@@ -246,6 +288,14 @@ function TeacherScanPage({ auth, mode = 'teacher' }) {
                     <Camera size={16} />
                     <span>{cameraError || (cameraReady ? 'Scanner active' : 'Connecting camera...')}</span>
                   </div>
+                  {scanFeedback ? (
+                    <div className={`scan-feedback-popup ${scanFeedback.tone}`} role="status">
+                      <CheckCircle2 size={24} />
+                      <span className="scan-feedback-title">{scanFeedback.title}</span>
+                      <span className="scan-feedback-text">{scanFeedback.text}</span>
+                      {scanFeedback.detail ? <span className="scan-feedback-detail">{scanFeedback.detail}</span> : null}
+                    </div>
+                  ) : null}
                 </>
               )}
             </div>

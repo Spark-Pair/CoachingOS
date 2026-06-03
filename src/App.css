@@ -1892,17 +1892,22 @@
 
 .themed-scan-screen {
   min-height: 100vh;
-  padding: 24px;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  padding: clamp(10px, 2vh, 18px);
   background:
     radial-gradient(circle at top left, rgba(15, 118, 110, 0.15), transparent 34%),
     #eef4f4;
 }
 
 .scan-shell {
-  width: min(1040px, 100%);
+  width: min(760px, 100%);
+  max-height: calc(100vh - 20px);
+  max-height: calc(100dvh - 20px);
   display: grid;
   grid-template-columns: 1fr;
-  gap: 18px;
+  gap: 12px;
   align-items: stretch;
 }
 
@@ -1914,14 +1919,16 @@
 .scan-hero-panel {
   overflow: hidden;
   position: relative;
-  padding: 24px;
+  max-height: calc(100vh - 20px);
+  max-height: calc(100dvh - 20px);
+  padding: clamp(14px, 2vh, 18px);
   color: white;
   background:
     linear-gradient(160deg, rgba(15, 118, 110, 0.95), rgba(11, 94, 88, 0.9)),
     var(--accent);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(10px, 1.6vh, 14px);
 }
 
 .scan-hero-panel::after {
@@ -1947,17 +1954,18 @@
   position: relative;
   z-index: 1;
   margin-top: auto;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.17);
-  border-radius: 22px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.08);
 }
 
 .themed-scan-screen .camera-frame {
   position: relative;
   overflow: hidden;
-  min-height: 360px;
-  border-radius: 18px;
+  height: min(48vh, 390px);
+  min-height: 220px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
   text-align: center;
@@ -2085,6 +2093,69 @@
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
   font-weight: 600;
+}
+
+.scan-feedback-popup {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 2;
+  width: min(300px, calc(100% - 32px));
+  min-height: 128px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.84);
+  color: white;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+  animation: scan-feedback-in 120ms ease-out;
+}
+
+.scan-feedback-popup.success {
+  background: rgba(15, 118, 110, 0.92);
+}
+
+.scan-feedback-popup.info {
+  background: rgba(30, 64, 175, 0.9);
+}
+
+.scan-feedback-popup.warning {
+  background: rgba(180, 83, 9, 0.92);
+}
+
+.scan-feedback-title,
+.scan-feedback-text,
+.scan-feedback-detail {
+  display: block;
+  max-width: 100%;
+  text-align: center;
+}
+
+.scan-feedback-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.78;
+  text-transform: uppercase;
+}
+
+.scan-feedback-text {
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.scan-feedback-detail {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.82rem;
+}
+
+@keyframes scan-feedback-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.97);
+  }
 }
 
 .scan-toast {
@@ -2359,6 +2430,19 @@
 
   .pin-screen {
     padding: 14px;
+  }
+
+  .themed-scan-screen {
+    padding: 10px;
+  }
+
+  .scan-hero-panel {
+    border-radius: 20px;
+  }
+
+  .themed-scan-screen .camera-frame {
+    height: min(42vh, 320px);
+    min-height: 200px;
   }
 
   .pin-shell {

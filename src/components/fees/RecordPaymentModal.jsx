@@ -1,56 +1,94 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Modal from '../common/Modal'
 import Select from '../common/Select'
-
-const monthOptions = [
-  { label: 'January 2026', value: '2026-01' },
-  { label: 'February 2026', value: '2026-02' },
-  { label: 'March 2026', value: '2026-03' },
-  { label: 'April 2026', value: '2026-04' },
-  { label: 'May 2026', value: '2026-05' },
-  { label: 'June 2026', value: '2026-06' },
-]
+import { apiRequest } from '../../utils/api'
 
 function getTodayInputValue() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function RecordPaymentModal({ isOpen, onClose, students, feeRecords, onRecord }) {
-  const amountRef = useRef(null)
-  const studentOptions = students.map((student) => ({ label: `${student.name} (${student.rollNo})`, value: student.id }))
-  const [studentId, setStudentId] = useState(studentOptions[0]?.value ?? '')
-  const selectedStudent = students.find((student) => student.id === studentId)
+function formatMoney(amount) {
+  return `Rs ${Number(amount || 0).toLocaleString()}`
+}
 
-  const unpaidMonthOptions = useMemo(() => {
-    const paidMonths = new Set(feeRecords
-      .filter((record) => record.studentId === studentId)
-      .map((record) => record.month))
+function formatMonth(month) {
+  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(`${month}-01`))
+}
 
-    return monthOptions.filter((month) => !paidMonths.has(month.value))
-  }, [feeRecords, studentId])
-
-  const [month, setMonth] = useState(unpaidMonthOptions[0]?.value ?? '')
+function RecordPaymentModal({ isOpen, onClose, students, token, onRecord, isSaving = false }) {
+  const studentOptions = useMemo(
+    () => students
+      .filter((student) => student.status === 'Active')
+      .map((student) => ({ label: `${student.name} (${student.rollNo})`, value: student.id })),
+    [students],
+  )
+  const [studentId, setStudentId] = useState('')
+  const [month, setMonth] = useState('')
   const [paidDate, setPaidDate] = useState(() => getTodayInputValue())
+  const [amount, setAmount] = useState(0)
+  const [unpaidMonths, setUnpaidMonths] = useState([])
+  const [isLoadingMonths, setIsLoadingMonths] = useState(false)
+  const [error, setError] = useState('')
+
+  const monthOptions = useMemo(
+    () => unpaidMonths.map((monthValue) => ({ label: formatMonth(monthValue), value: monthValue })),
+    [unpaidMonths],
+  )
+
+  const hasSelectedStudent = Boolean(studentId)
+  const canEditDetails = hasSelectedStudent && !isLoadingMonths && !isSaving
+  const canSubmit = canEditDetails && Boolean(month)
 
   useEffect(() => {
     if (!isOpen) {
-      return undefined
-    }
-
-    const timer = window.setTimeout(() => amountRef.current?.focus(), 80)
-    return () => window.clearTimeout(timer)
-  }, [isOpen])
-
-  useEffect(() => {
-    if (!unpaidMonthOptions.some((option) => option.value === month)) {
       const timer = window.setTimeout(() => {
-        setMonth(unpaidMonthOptions[0]?.value ?? '')
+        setStudentId('')
+        setMonth('')
+        setPaidDate(getTodayInputValue())
+        setAmount(0)
+        setUnpaidMonths([])
+        setError('')
       }, 0)
       return () => window.clearTimeout(timer)
     }
 
     return undefined
-  }, [month, unpaidMonthOptions])
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen || !studentId) {
+      return undefined
+    }
+
+    let isMounted = true
+
+    const timer = window.setTimeout(async () => {
+      if (!isMounted) return
+      setIsLoadingMonths(true)
+      setError('')
+      setMonth('')
+      setUnpaidMonths([])
+      setAmount(0)
+
+      try {
+        const result = await apiRequest(`/fees/students/${studentId}/unpaid-months`, { token })
+        if (!isMounted) return
+        setUnpaidMonths(result.unpaidMonths || [])
+        setAmount(result.amount || 0)
+        setMonth(result.unpaidMonths?.[0] || '')
+      } catch (requestError) {
+        if (!isMounted) return
+        setError(requestError.message)
+      } finally {
+        if (isMounted) setIsLoadingMonths(false)
+      }
+    }, 0)
+
+    return () => {
+      isMounted = false
+      window.clearTimeout(timer)
+    }
+  }, [isOpen, studentId, token])
 
   return (
     <Modal
@@ -60,53 +98,56 @@ function RecordPaymentModal({ isOpen, onClose, students, feeRecords, onRecord })
       className="fee-modal"
       footer={(
         <>
-          <button type="button" className="secondary-button modal-action" onClick={onClose}>
+          <button type="button" className="secondary-button modal-action" disabled={isSaving} onClick={onClose}>
             Cancel
           </button>
           <button
             type="button"
             className="primary-button modal-action"
-            disabled={!studentId || !month}
-            onClick={() => {
-              if (!selectedStudent || !month) {
-                return
+            disabled={!canSubmit}
+            onClick={async () => {
+              if (!canSubmit) return
+              setError('')
+              try {
+                await onRecord({ studentId, month, paidDate })
+              } catch (requestError) {
+                setError(requestError.message)
               }
-
-              onRecord({
-                id: `FR-${Date.now()}`,
-                studentId,
-                month,
-                amount: selectedStudent.monthlyFee,
-                paidDate,
-              })
-              onClose()
             }}
           >
-            Save Payment
+            {isSaving ? 'Saving...' : 'Save Payment'}
           </button>
         </>
       )}
     >
       <form className="student-form">
         <div className="form-grid two-columns">
-          <Select label="Student" options={studentOptions} value={studentId} onChange={setStudentId} />
+          <Select
+            label="Student"
+            options={studentOptions}
+            value={studentId}
+            onChange={setStudentId}
+            placeholder="Select student"
+            disabled={isSaving}
+          />
           <Select
             label="Month"
-            options={unpaidMonthOptions}
+            options={monthOptions}
             value={month}
             onChange={setMonth}
-            placeholder={unpaidMonthOptions.length ? 'Select month' : 'No unpaid months'}
-            disabled={!unpaidMonthOptions.length}
+            placeholder={hasSelectedStudent ? (isLoadingMonths ? 'Loading months...' : 'No unpaid months') : 'Select student first'}
+            disabled={!canEditDetails || !monthOptions.length}
           />
           <label className="drawer-field">
             <span>Amount</span>
-            <input ref={amountRef} type="text" value={`Rs ${(selectedStudent?.monthlyFee ?? 0).toLocaleString()}`} readOnly />
+            <input type="text" value={hasSelectedStudent ? formatMoney(amount) : ''} placeholder="Select student first" readOnly disabled={!hasSelectedStudent} />
           </label>
           <label className="drawer-field">
             <span>Paid date</span>
-            <input type="date" value={paidDate} onChange={(event) => setPaidDate(event.target.value)} />
+            <input type="date" value={paidDate} disabled={!canEditDetails} onChange={(event) => setPaidDate(event.target.value)} />
           </label>
         </div>
+        {error ? <div className="inline-alert danger">{error}</div> : null}
       </form>
     </Modal>
   )
