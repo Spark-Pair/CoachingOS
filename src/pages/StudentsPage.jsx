@@ -178,6 +178,13 @@ function StudentsPage({ auth }) {
 
       <TablePanel
         className="students-directory"
+        filterCount={[
+          Boolean(filters.search),
+          filters.classId !== 'all',
+          filters.status !== 'all',
+          Boolean(filters.dateFrom),
+          Boolean(filters.dateTo),
+        ].filter(Boolean).length}
         onFilterClick={() => {
           if (!isBusy) setIsFilterOpen(true)
         }}
@@ -192,6 +199,7 @@ function StudentsPage({ auth }) {
               <th>S.No</th>
               <th>Student</th>
               <th>Parent</th>
+              <th>Phone</th>
               <th>Class</th>
               <th>Monthly fee</th>
               <th>Joining date</th>
@@ -202,7 +210,7 @@ function StudentsPage({ auth }) {
           <tbody>
             {!isLoading && studentRows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="empty-table-copy">No students match these filters.</td>
+                <td colSpan={9} className="empty-table-copy">No students match these filters.</td>
               </tr>
             ) : null}
             {!isLoading && studentRows.map((student, index) => (
@@ -220,6 +228,7 @@ function StudentsPage({ auth }) {
                   </div>
                 </td>
                 <td>{student.parentName}</td>
+                <td>{student.phone || '-'}</td>
                 <td>{student.className}</td>
                 <td>Rs {student.monthlyFee.toLocaleString()}</td>
                 <td>{formatTableDate(student.joiningDate)}</td>

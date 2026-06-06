@@ -19,6 +19,7 @@ function StudentFormModal({
   const nameInputRef = useRef(null)
   const [name, setName] = useState(student?.name ?? '')
   const [parentName, setParentName] = useState(student?.parentName ?? '')
+  const [phone, setPhone] = useState(student?.phone ?? '')
   const [rollNo, setRollNo] = useState(student?.rollNo ?? '')
   const [monthlyFee, setMonthlyFee] = useState(student?.monthlyFee ?? '')
   const [classId, setClassId] = useState(student?.classId ?? classOptions[0]?.value ?? '')
@@ -41,6 +42,7 @@ function StudentFormModal({
     const timer = window.setTimeout(() => {
       setName(student?.name ?? '')
       setParentName(student?.parentName ?? '')
+      setPhone(student?.phone ?? '')
       setRollNo(student?.rollNo ?? '')
       setMonthlyFee(student?.monthlyFee ?? '')
       setClassId(student?.classId ?? classOptions[0]?.value ?? '')
@@ -80,6 +82,7 @@ function StudentFormModal({
           const payload = {
             name: name.trim(),
             parentName: parentName.trim(),
+            phone: phone.trim(),
             rollNo: rollNo.trim(),
             monthlyFee: Number(monthlyFee),
             joiningDate,
@@ -98,6 +101,10 @@ function StudentFormModal({
           <label className="drawer-field">
             <span>Parent Name</span>
             <input type="text" required placeholder="Parent name" value={parentName} onChange={(event) => setParentName(event.target.value)} />
+          </label>
+          <label className="drawer-field">
+            <span>Phone Number</span>
+            <input type="tel" required placeholder="Phone number" value={phone} onChange={(event) => setPhone(event.target.value)} />
           </label>
           <label className="drawer-field">
             <span>Roll No</span>

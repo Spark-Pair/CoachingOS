@@ -85,7 +85,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute auth={auth}>
             <AdminLayout auth={auth}>
-              <ReportsPage />
+              <ReportsPage auth={auth} />
             </AdminLayout>
           </ProtectedRoute>
         }
@@ -95,7 +95,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute auth={auth}>
             <AdminLayout auth={auth}>
-              <QrPage />
+              <QrPage auth={auth} />
             </AdminLayout>
           </ProtectedRoute>
         }

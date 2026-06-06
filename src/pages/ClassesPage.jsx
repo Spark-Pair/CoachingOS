@@ -135,6 +135,7 @@ function ClassesPage({ auth }) {
 
       <TablePanel
         className="students-directory classes-directory"
+        filterCount={[Boolean(filters.search), filters.status !== 'all'].filter(Boolean).length}
         onFilterClick={() => {
           if (!isBusy) setIsFilterOpen(true)
         }}

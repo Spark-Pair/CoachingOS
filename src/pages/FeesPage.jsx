@@ -171,6 +171,12 @@ function FeesPage({ auth }) {
       </section>
       <TablePanel
         className="students-directory fees-directory"
+        filterCount={[
+          filters.studentId !== 'all',
+          filters.classId !== 'all',
+          Boolean(filters.dateFrom),
+          Boolean(filters.dateTo),
+        ].filter(Boolean).length}
         onFilterClick={() => {
           if (!isBusy) setIsFilterOpen(true)
         }}
