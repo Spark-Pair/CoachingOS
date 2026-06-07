@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Download, SlidersHorizontal } from 'lucide-react'
+import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import PanelLoader from './PanelLoader'
 
 function TablePanel({
@@ -60,17 +60,11 @@ function TablePanel({
           <div className="panel-toolbar-actions">
             {toolbarContent}
             {showDefaultActions ? (
-              <>
-                <button type="button" className="toolbar-button" onClick={onFilterClick} disabled={isToolbarDisabled}>
-                  <ActionIcon size={14} />
-                  {actionsLabel}
-                  {Number.isInteger(filterCount) ? <span className="filter-number">{filterCount}</span> : null}
-                </button>
-                <button type="button" className="toolbar-button" disabled={isToolbarDisabled}>
-                  <Download size={14} />
-                  Export
-                </button>
-              </>
+              <button type="button" className="toolbar-button" onClick={onFilterClick} disabled={isToolbarDisabled}>
+                <ActionIcon size={14} />
+                {actionsLabel}
+                {Number.isInteger(filterCount) ? <span className="filter-number">{filterCount}</span> : null}
+              </button>
             ) : null}
           </div>
         </div>

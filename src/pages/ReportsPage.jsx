@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, CalendarDays, ChevronRight, FileSpreadsheet, FolderKanban, ReceiptText, SlidersHorizontal, Users } from 'lucide-react'
 import FilterDrawer from '../components/common/FilterDrawer'
+import MultiSelect from '../components/common/MultiSelect'
 import PageHeader from '../components/common/PageHeader'
 import Select from '../components/common/Select'
 import TablePanel from '../components/common/TablePanel'
@@ -110,26 +111,6 @@ async function downloadReport({ token, path, params, fallbackName }) {
   downloadBlob(blob, filename)
 }
 
-function ClassFilter({ classOptions, selectedIds, onToggle }) {
-  return (
-    <div className="report-class-filter">
-      <span className="custom-select-label">Classes</span>
-      <div className="report-class-options">
-        {classOptions.map((classItem) => (
-          <label key={classItem.id} className="report-class-option">
-            <input
-              type="checkbox"
-              checked={selectedIds.includes(classItem.id)}
-              onChange={() => onToggle(classItem.id)}
-            />
-            <span>{classItem.name}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function ReportRow({ title, detail, filterCount, isDownloading, onFilter, onDownload }) {
   return (
     <tr>
@@ -145,7 +126,7 @@ function ReportRow({ title, detail, filterCount, isDownloading, onFilter, onDown
       </td>
       <td>
         {onFilter ? (
-          <button type="button" className="primary-button report-table-action" disabled={isDownloading} onClick={onFilter}>
+          <button type="button" className="toolbar-button report-table-action" disabled={isDownloading} onClick={onFilter}>
             <SlidersHorizontal size={16} />
             Filters
             <span className="filter-number">{filterCount}</span>
@@ -283,15 +264,6 @@ function ReportsPage({ auth }) {
     const timer = window.setTimeout(() => loadStudentOptions(), 0)
     return () => window.clearTimeout(timer)
   }, [activeCategory, loadStudentOptions])
-
-  function toggleClass(setter, classId) {
-    setter((current) => ({
-      ...current,
-      classIds: current.classIds.includes(classId)
-        ? current.classIds.filter((id) => id !== classId)
-        : [...current.classIds, classId],
-    }))
-  }
 
   function openStudentFilters() {
     setStudentDraft(studentFilters)
@@ -561,10 +533,12 @@ function ReportsPage({ auth }) {
               value={studentDraft.status}
               onChange={(status) => setStudentDraft((current) => ({ ...current, status }))}
             />
-            <ClassFilter
-              classOptions={classOptions}
-              selectedIds={studentDraft.classIds}
-              onToggle={(classId) => toggleClass(setStudentDraft, classId)}
+            <MultiSelect
+              label="Classes"
+              options={classOptions.map((classItem) => ({ label: classItem.name, value: classItem.id }))}
+              values={studentDraft.classIds}
+              onChange={(classIds) => setStudentDraft((current) => ({ ...current, classIds }))}
+              placeholder="All classes"
             />
             <label className="drawer-field">
               <span>Joining Date From</span>
@@ -634,10 +608,12 @@ function ReportsPage({ auth }) {
               value={feeDraft.month}
               onChange={(month) => setFeeDraft((current) => ({ ...current, month }))}
             />
-            <ClassFilter
-              classOptions={classOptions}
-              selectedIds={feeDraft.classIds}
-              onToggle={(classId) => toggleClass(setFeeDraft, classId)}
+            <MultiSelect
+              label="Classes"
+              options={classOptions.map((classItem) => ({ label: classItem.name, value: classItem.id }))}
+              values={feeDraft.classIds}
+              onChange={(classIds) => setFeeDraft((current) => ({ ...current, classIds }))}
+              placeholder="All classes"
             />
           </>
         ) : filterTarget ? (
@@ -646,10 +622,12 @@ function ReportsPage({ auth }) {
               <span>Attendance Date</span>
               <input type="date" max={today} value={attendanceDraft.date} onChange={(event) => setAttendanceDraft((current) => ({ ...current, date: event.target.value }))} />
             </label>
-            <ClassFilter
-              classOptions={classOptions}
-              selectedIds={attendanceDraft.classIds}
-              onToggle={(classId) => toggleClass(setAttendanceDraft, classId)}
+            <MultiSelect
+              label="Classes"
+              options={classOptions.map((classItem) => ({ label: classItem.name, value: classItem.id }))}
+              values={attendanceDraft.classIds}
+              onChange={(classIds) => setAttendanceDraft((current) => ({ ...current, classIds }))}
+              placeholder="All classes"
             />
           </>
         ) : null}

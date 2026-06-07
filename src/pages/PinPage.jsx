@@ -95,7 +95,7 @@ function PinPage({ auth }) {
             <h1>{isRegistration ? 'Register admin PIN' : 'Welcome back'}</h1>
             <p className="pin-copy">
               {isRegistration
-                ? 'Create a 4-digit PIN for this browser. You can change auth later when backend login is connected.'
+                ? 'Create a 4-digit administrator PIN for this licensed installation.'
                 : 'Enter your 4-digit PIN to continue to the protected workspace.'}
             </p>
           </div>

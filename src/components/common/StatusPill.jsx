@@ -8,6 +8,8 @@ const toneMap = {
   Unpaid: 'danger',
   Active: 'success',
   Inactive: 'neutral',
+  Expired: 'danger',
+  'Clock error': 'danger',
 }
 
 function StatusPill({ value }) {

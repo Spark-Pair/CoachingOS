@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { CheckCircle2, CircleAlert, Info, X } from 'lucide-react'
 import ToastContext from './toastContext'
 
 function createToast(id, { message, tone = 'info', durationMs = 3200 }) {
@@ -52,18 +53,25 @@ function ToastProvider({ children }) {
     <ToastContext.Provider value={api}>
       {children}
       <div className="toast-stack" role="region" aria-label="Notifications">
-        {toasts.map((toast) => (
-          <div key={toast.id} className={`toast-item ${toast.tone}`} role="status">
-            <span className="toast-message">{toast.message}</span>
-            <button type="button" className="toast-dismiss" onClick={() => remove(toast.id)} aria-label="Dismiss notification">
-              ×
-            </button>
-          </div>
-        ))}
+        {toasts.map((toast) => {
+          const Icon = toast.tone === 'success' ? CheckCircle2 : toast.tone === 'danger' ? CircleAlert : Info
+          const title = toast.tone === 'success' ? 'Success' : toast.tone === 'danger' ? 'Something went wrong' : 'Notice'
+          return (
+            <div key={toast.id} className={`toast-item ${toast.tone}`} role="status">
+              <span className="toast-icon"><Icon size={18} /></span>
+              <span className="toast-copy">
+                <strong>{title}</strong>
+                <span className="toast-message">{toast.message}</span>
+              </span>
+              <button type="button" className="toast-dismiss" onClick={() => remove(toast.id)} aria-label="Dismiss notification">
+                <X size={16} />
+              </button>
+            </div>
+          )
+        })}
       </div>
     </ToastContext.Provider>
   )
 }
 
 export default ToastProvider
-

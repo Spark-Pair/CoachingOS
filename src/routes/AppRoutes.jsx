@@ -27,7 +27,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute auth={auth}>
             <AdminLayout auth={auth}>
-              <DashboardPage />
+              <DashboardPage auth={auth} />
             </AdminLayout>
           </ProtectedRoute>
         }
