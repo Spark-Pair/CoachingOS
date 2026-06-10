@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from '../components/auth/ProtectedRoute'
 import AdminLayout from '../components/layout/AdminLayout'
+import UpdateManager from '../components/updates/UpdateManager'
 import useLocalAuth from '../hooks/useLocalAuth'
 import AttendancePage from '../pages/AttendancePage'
 import ClassesPage from '../pages/ClassesPage'
@@ -17,21 +18,22 @@ function AppRoutes() {
   const auth = useLocalAuth()
 
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/scan" element={<TeacherScanPage />} />
-      <Route path="/pin" element={<PinPage auth={auth} />} />
+    <>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/scan" element={<TeacherScanPage />} />
+        <Route path="/pin" element={<PinPage auth={auth} />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute auth={auth}>
-            <AdminLayout auth={auth}>
-              <DashboardPage auth={auth} />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute auth={auth}>
+              <AdminLayout auth={auth}>
+                <DashboardPage auth={auth} />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
       <Route
         path="/students"
         element={
@@ -111,8 +113,10 @@ function AppRoutes() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+      <UpdateManager auth={auth} />
+    </>
   )
 }
 
