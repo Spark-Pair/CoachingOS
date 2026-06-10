@@ -5,6 +5,7 @@ import {
   DatabaseBackup,
   Download,
   HardDrive,
+  PackageCheck,
   KeyRound,
   RotateCcw,
   ShieldCheck,
@@ -43,6 +44,7 @@ function SettingsPage({ auth }) {
   const [isResetPinOpen, setIsResetPinOpen] = useState(false)
   const [subscription, setSubscription] = useState(null)
   const [backupStatus, setBackupStatus] = useState(null)
+  const [applicationVersion, setApplicationVersion] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isBackingUp, setIsBackingUp] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
@@ -52,12 +54,14 @@ function SettingsPage({ auth }) {
   const loadSettings = useCallback(async () => {
     setIsLoading(true)
     try {
-      const [subscriptionResult, backupResult] = await Promise.all([
+      const [subscriptionResult, backupResult, versionResult] = await Promise.all([
         apiRequest('/auth/subscription', { token: auth.token }),
         apiRequest('/backups/status', { token: auth.token }),
+        apiRequest('/updates/version', { token: auth.token }),
       ])
       setSubscription(subscriptionResult.subscription)
       setBackupStatus(backupResult.backup)
+      setApplicationVersion(versionResult)
     } catch (error) {
       toast.error(error.message)
     } finally {
@@ -143,6 +147,29 @@ function SettingsPage({ auth }) {
       />
 
       <section className="settings-stack">
+        <section className="panel-shell settings-shell application-settings-shell">
+          <div className="settings-shell-header">
+            <div className="settings-shell-title">
+              <span className="icon-chip icon-chip-brand">
+                <PackageCheck size={16} />
+              </span>
+              <div>
+                <h3>Application</h3>
+                <p>Installed CoachingOS application details.</p>
+              </div>
+            </div>
+            {applicationVersion ? (
+              <div className="application-version">
+                <span>Version</span>
+                <strong>{applicationVersion.version}</strong>
+              </div>
+            ) : null}
+          </div>
+          {!isLoading && applicationVersion && !applicationVersion.installed ? (
+            <div className="application-mode">Running in development mode</div>
+          ) : null}
+        </section>
+
         <section className="panel-shell settings-shell subscription-settings-shell">
           <div className="settings-shell-header">
             <div className="settings-shell-title">

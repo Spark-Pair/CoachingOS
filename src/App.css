@@ -2851,6 +2851,31 @@
   border-color: #edf1f3;
 }
 
+.application-version {
+  min-width: 108px;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.application-version span {
+  color: var(--color-text-secondary);
+  font-size: 0.76rem;
+}
+
+.application-version strong {
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+
+.application-mode {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  background: #f8fafb;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+}
+
 .backup-settings-content {
   border-top: 1px solid var(--border);
 }
@@ -3298,6 +3323,10 @@
   .panel-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .application-version {
+    justify-items: start;
   }
 
   .backup-settings-row {
