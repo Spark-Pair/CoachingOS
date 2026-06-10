@@ -7,6 +7,7 @@ function ConfirmModal({
   message,
   confirmLabel = 'Confirm',
   tone = 'default',
+  isConfirming = false,
   onCancel,
   onConfirm,
 }) {
@@ -17,15 +18,21 @@ function ConfirmModal({
       title={title}
       isOpen={isOpen}
       onClose={onCancel}
+      disableClose={isConfirming}
       className="confirm-modal"
       footer={(
         <>
-          <button type="button" className="secondary-button modal-action" onClick={onCancel}>
+          <button type="button" className="secondary-button modal-action" onClick={onCancel} disabled={isConfirming}>
             Cancel
           </button>
-          <button type="button" className={`${tone === 'danger' ? 'danger-outline-button' : 'primary-button'} modal-action`} onClick={onConfirm}>
+          <button
+            type="button"
+            className={`${tone === 'danger' ? 'danger-outline-button' : 'primary-button'} modal-action`}
+            onClick={onConfirm}
+            disabled={isConfirming}
+          >
             {tone === 'danger' ? <Power size={16} /> : null}
-            {confirmLabel}
+            {isConfirming ? 'Please wait...' : confirmLabel}
           </button>
         </>
       )}
