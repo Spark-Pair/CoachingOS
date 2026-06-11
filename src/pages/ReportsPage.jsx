@@ -450,7 +450,7 @@ function ReportsPage({ auth }) {
           <ReportsTable>
             <ReportRow
               title="Student Directory Report"
-              detail="Students with roll no, parent name, phone, class, monthly fee, joining date, and status."
+              detail="Students with roll no, parent name, phone, DOB, class, group, monthly fee, joining date, and status."
               filterCount={studentReportFilterCount()}
               isDownloading={downloadingReport === 'student-directory'}
               onFilter={openStudentFilters}

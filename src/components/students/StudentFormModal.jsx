@@ -20,6 +20,8 @@ function StudentFormModal({
   const [name, setName] = useState(student?.name ?? '')
   const [parentName, setParentName] = useState(student?.parentName ?? '')
   const [phone, setPhone] = useState(student?.phone ?? '')
+  const [dateOfBirth, setDateOfBirth] = useState(student?.dateOfBirth ? String(student.dateOfBirth).slice(0, 10) : '')
+  const [group, setGroup] = useState(student?.group ?? '')
   const [rollNo, setRollNo] = useState(student?.rollNo ?? '')
   const [monthlyFee, setMonthlyFee] = useState(student?.monthlyFee ?? '')
   const [classId, setClassId] = useState(student?.classId ?? classOptions[0]?.value ?? '')
@@ -43,6 +45,8 @@ function StudentFormModal({
       setName(student?.name ?? '')
       setParentName(student?.parentName ?? '')
       setPhone(student?.phone ?? '')
+      setDateOfBirth(student?.dateOfBirth ? String(student.dateOfBirth).slice(0, 10) : '')
+      setGroup(student?.group ?? '')
       setRollNo(student?.rollNo ?? '')
       setMonthlyFee(student?.monthlyFee ?? '')
       setClassId(student?.classId ?? classOptions[0]?.value ?? '')
@@ -83,6 +87,8 @@ function StudentFormModal({
             name: name.trim(),
             parentName: parentName.trim(),
             phone: phone.trim(),
+            dateOfBirth,
+            group: group.trim(),
             rollNo: rollNo.trim(),
             monthlyFee: Number(monthlyFee),
             joiningDate,
@@ -105,6 +111,14 @@ function StudentFormModal({
           <label className="drawer-field">
             <span>Phone Number</span>
             <input type="tel" required placeholder="Phone number" value={phone} onChange={(event) => setPhone(event.target.value)} />
+          </label>
+          <label className="drawer-field">
+            <span>Date of Birth</span>
+            <input type="date" required max={getTodayInputValue()} value={dateOfBirth} onChange={(event) => setDateOfBirth(event.target.value)} />
+          </label>
+          <label className="drawer-field">
+            <span>Group</span>
+            <input type="text" required placeholder="Science, commerce, etc." value={group} onChange={(event) => setGroup(event.target.value)} />
           </label>
           <label className="drawer-field">
             <span>Roll No</span>

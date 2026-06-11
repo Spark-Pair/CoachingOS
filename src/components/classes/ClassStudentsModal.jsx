@@ -60,7 +60,7 @@ function ClassStudentsModal({ classItem, token, onClose }) {
       >
         <label className="drawer-field">
           <span>Find student</span>
-          <input type="search" value={search} placeholder="Name, roll no, or parent" onChange={(event) => setSearch(event.target.value)} />
+          <input type="search" value={search} placeholder="Name, roll no, parent, or group" onChange={(event) => setSearch(event.target.value)} />
         </label>
         <Select label="Status" options={statusOptions} value={status} onChange={setStatus} />
         <button type="submit" className="primary-button student-filter-action">Apply</button>
@@ -83,6 +83,7 @@ function ClassStudentsModal({ classItem, token, onClose }) {
               <th>Student</th>
               <th>Parent</th>
               <th>Roll No</th>
+              <th>Group</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -93,6 +94,7 @@ function ClassStudentsModal({ classItem, token, onClose }) {
                 <td className="student-name">{student.name}</td>
                 <td>{student.parentName || '-'}</td>
                 <td>{student.rollNo || '-'}</td>
+                <td>{student.group || '-'}</td>
                 <td><StatusPill value={student.status} /></td>
               </tr>
             ))}

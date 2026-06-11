@@ -200,7 +200,9 @@ function StudentsPage({ auth }) {
               <th>Student</th>
               <th>Parent</th>
               <th>Phone</th>
+              <th>DOB</th>
               <th>Class</th>
+              <th>Group</th>
               <th>Monthly fee</th>
               <th>Joining date</th>
               <th>Status</th>
@@ -210,7 +212,7 @@ function StudentsPage({ auth }) {
           <tbody>
             {!isLoading && studentRows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="empty-table-copy">No students match these filters.</td>
+                <td colSpan={11} className="empty-table-copy">No students match these filters.</td>
               </tr>
             ) : null}
             {!isLoading && studentRows.map((student, index) => (
@@ -229,7 +231,9 @@ function StudentsPage({ auth }) {
                 </td>
                 <td>{student.parentName}</td>
                 <td>{student.phone || '-'}</td>
+                <td>{student.dateOfBirth ? formatTableDate(student.dateOfBirth) : '-'}</td>
                 <td>{student.className}</td>
+                <td>{student.group || '-'}</td>
                 <td>Rs {student.monthlyFee.toLocaleString()}</td>
                 <td>{formatTableDate(student.joiningDate)}</td>
                 <td><StatusPill value={student.status} /></td>
@@ -286,7 +290,7 @@ function StudentsPage({ auth }) {
       >
         <label className="drawer-field">
           <span>Student Name</span>
-          <input type="search" value={searchDraft} placeholder="Search by name" onChange={(event) => setSearchDraft(event.target.value)} />
+          <input type="search" value={searchDraft} placeholder="Name, roll no, phone, or group" onChange={(event) => setSearchDraft(event.target.value)} />
         </label>
         <Select label="Class" options={filterClassOptions} value={classDraft} onChange={setClassDraft} />
         <Select label="Status" options={statusOptions} value={statusDraft} onChange={setStatusDraft} />

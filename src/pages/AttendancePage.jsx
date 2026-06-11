@@ -194,6 +194,7 @@ function AttendancePage({ auth }) {
                 <th>Student</th>
                 <th>Parent</th>
                 <th>Class</th>
+                <th>Group</th>
                 <th>Joining date</th>
                 <th>Attendance</th>
               </tr>
@@ -201,7 +202,7 @@ function AttendancePage({ auth }) {
             <tbody>
               {students.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="empty-table-copy">No active students found for this class.</td>
+                  <td colSpan={7} className="empty-table-copy">No active students found for this class.</td>
                 </tr>
               ) : null}
               {students.map((student, index) => (
@@ -220,6 +221,7 @@ function AttendancePage({ auth }) {
                   </td>
                   <td>{student.parentName}</td>
                   <td>{student.className}</td>
+                  <td>{student.group || '-'}</td>
                   <td>{formatTableDate(student.joiningDate)}</td>
                   <td>
                     <div className="attendance-switch" aria-label={`Attendance for ${student.name}`}>
